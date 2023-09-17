@@ -1,0 +1,5 @@
+set title "Throwing of Ball Simulation (Continuous LTI System)"
+set xlabel "time (s)"
+set ylabel "distance (m/s)"
+
+plot "OUT" using 1:5 title 'y_v_e_l (m)' with lines
