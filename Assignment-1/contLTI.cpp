@@ -14,11 +14,13 @@ Eigen::VectorXd m_func(double t, const Eigen::VectorXd &in)
 {
 	Eigen::VectorXd out;
 
+	double g = -9.81;
+
 	//	Eigen::VectorXd u(1);
 	Eigen::MatrixXd A(4, 4);
 	Eigen::MatrixXd k(4, 1);
 	A << 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0;
-	k << 0, 0, 0, -9.81;
+	k << 0, 0, 0, g;
 	// out=  -in +10*(u-in);
 	// out(0)= out(0)+3;
 	// out<<3;
