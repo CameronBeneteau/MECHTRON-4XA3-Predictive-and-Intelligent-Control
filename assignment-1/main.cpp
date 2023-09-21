@@ -12,8 +12,8 @@ void testLTI(void)
    double V = 50;
    double alpha = 45 * M_PI / 180; // radians
    double g = -9.81;
-   double h = 0.001; // step size
-   int maxTime = 8;  // seconds
+   double h = 0.001;                             // step size
+   double maxTime = 2 * V * sin(alpha) / abs(g); // seconds
 
    int n = 4;
 

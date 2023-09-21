@@ -67,5 +67,5 @@ int main(void)
 	Eigen::VectorXd x(4);
 	x << 0, V * cos(alpha), 0, V * sin(alpha);
 
-	solve(x, .01, 8);
+	solve(x, .01, 2 * V * sin(alpha) / 9.81);
 }

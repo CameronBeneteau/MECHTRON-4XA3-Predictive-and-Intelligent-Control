@@ -1,0 +1,5 @@
+set title "Throwing of Ball Simulation (Discrete LTI System)"
+set xlabel "x_p_o_s (m)"
+set ylabel "y_p_o_s (m)"
+
+plot "OUT" using 2:4 title "position (m)" with lines, \
