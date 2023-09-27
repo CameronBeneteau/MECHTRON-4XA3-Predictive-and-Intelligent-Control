@@ -1,5 +1,5 @@
 # Compiles, runs and plots output from c++ code
 
-g++ find_max_st.cpp
+g++ line_lls.cpp
 ./a.out
-gnuplot -persist ./find_max_st.gplot
+gnuplot -persist ./line_lls.gplot

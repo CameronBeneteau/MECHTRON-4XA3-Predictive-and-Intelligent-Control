@@ -8,6 +8,9 @@
 
 #include <Eigen/Dense>
 
+using namespace std;
+using namespace Eigen;
+
 #define MAX_NUM 2014
 
 #define MIN .12
@@ -66,8 +69,29 @@ double find_max_naive(double *x, double *y, int num)
 //  The other code examples I gave have the pieces needed.
 double find_max(double *x, double *y, int num)
 {
-    // HERE
-    return (0.);
+    MatrixXd A(num, 3);
+    MatrixXd B(num, 1);
+
+    for (int i = 0; i < num; i++)
+    {
+        A(i, 0) = pow(x[i], 2);
+        A(i, 1) = x[i];
+        A(i, 2) = 1.;
+
+        B(i) = y[i];
+    }
+
+    VectorXd res = A.bdcSvd(ComputeThinU | ComputeThinV).solve(B);
+
+    double a = res(0);
+    double b = res(1);
+    double c = res(2);
+    double maxX = -b / (2 * a);
+
+    FILE *out_file = fopen("COEFFICIENTS", "w");
+    fprintf(out_file, "%f %f %f %f\n", a, b, c, maxX);
+
+    return maxX;
 }
 
 int main(void)

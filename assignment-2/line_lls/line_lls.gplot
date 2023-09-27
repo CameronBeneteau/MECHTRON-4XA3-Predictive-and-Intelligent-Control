@@ -1,0 +1,4 @@
+set title "Linear Least Squares (LLS) using Eigen"
+
+plot "DATA" using 1:2 title 'Data Points', \
+     "DATA" using 1:3 title 'LLS Line' with lines
