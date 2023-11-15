@@ -1,12 +1,12 @@
-// Extended Kalman filter localisation
+// Extended Kalman filter localization
 // (c) MvM for MECHTRON 4AX3,
 
-// THIS IS THE ASSIGMENT 4 VERSION,
-// ADD THE DISTANCE ONLY UPDATES with MOVING BEAKENBS
+// THIS IS THE ASSIGNMENT 4 VERSION,
+// ADD THE DISTANCE ONLY UPDATES with MOVING BEACONS
 
 // look for the HERE marker, that shows things you need to do
-// I impelmented you the satellites, the loggine of them and
-// the fucntipon prototypes you have to implement,  look for HERE  marker
+// I implemented you the satellites, the logging of them and
+// the function prototypes you have to implement,  look for HERE  marker
 
 #include <iostream>
 #include <Eigen/Dense>
@@ -34,7 +34,7 @@ double normal_angle(double x)
 }
 
 //-------------------------------------------------------
-// Beakens (C style implementation for list)
+// Beacons (C style implementation for list)
 
 #define MAX_NUM_B 32
 
@@ -119,7 +119,7 @@ void Satellite::Print(FILE *file)
 Satellite *satellites[MAX_NUM_B];
 int num_satellites = 0;
 
-void add_satelite(double x, double y, double bearing)
+void add_satellite(double x, double y, double bearing)
 {
     if (num_satellites > MAX_NUM_B)
         return;
@@ -160,7 +160,7 @@ public:
 
     void Move(void);
     Eigen::VectorXd GetState(void) { return (X); };
-    void LocalizeM(void); // Marker lcoalize, angle and distance
+    void LocalizeM(void); // Marker localize, angle and distance
     void LocalizeS(void); // Satellite, only distance
 
     void LocalizeC(void); // Compass, only direction
@@ -191,16 +191,16 @@ private:
 
     Eigen::MatrixXd P; // CoVariance Matrix
 
-    Eigen::MatrixXd R;  // Mesuement  Noise Marker (dist,angle)
-    Eigen::MatrixXd Rc; // Mesuement  Noise Compass
-    Eigen::MatrixXd Rs; // Mesuement  Noise  Satellite HERE
+    Eigen::MatrixXd R;  // Measurement  Noise Marker (dist,angle)
+    Eigen::MatrixXd Rc; // Measurement  Noise Compass
+    Eigen::MatrixXd Rs; // Measurement  Noise  Satellite HERE
     Eigen::MatrixXd M;  // Control Noise
 
-    Eigen::MatrixXd JF; // Jacibian of F
-    Eigen::MatrixXd JV; // Jacibian of F with respect to speed, steering
-    Eigen::MatrixXd JH; // Jacibian of H wiht respect to distance and angle
+    Eigen::MatrixXd JF; // Jacobian of F
+    Eigen::MatrixXd JV; // Jacobian of F with respect to speed, steering
+    Eigen::MatrixXd JH; // Jacobian of H with respect to distance and angle
 
-    Eigen::MatrixXd JHD; // Jacibian of H with respect to distance
+    Eigen::MatrixXd JHD; // Jacobian of H with respect to distance
 
     FILE *s_file; // States
     FILE *l_file; // Localizing
@@ -225,9 +225,9 @@ private:
 
 /*
  Motion Model: f
-        x= x+ dt* v*cos(thetha)
-        y= y+ dt* v*sin(thetha);
-        thetha=thetha +dt* steer
+        x= x+ dt* v*cos(theta)
+        y= y+ dt* v*sin(theta);
+        theta=theta +dt* steer
 
         dfx/dx=1 dfy/dy=1  dfte/te=
 
@@ -278,16 +278,16 @@ Robot::Robot(double _dt)
     Y = Eigen::VectorXd(2); //  Output
 
     M = Eigen::MatrixXd(2, 2);  //  Control Noise
-    R = Eigen::MatrixXd(2, 2);  // Mesurement Noise
-    Rc = Eigen::MatrixXd(1, 1); // Compass Mesurement Noise
-    Rs = Eigen::MatrixXd(1, 1); // Compass Mesurement Satellite
-    JF = Eigen::MatrixXd(3, 3); // Jacibian of F
-    JH = Eigen::MatrixXd(2, 3); // Jacibian of H
-    JV = Eigen::MatrixXd(3, 2); // Jacibian of V
+    R = Eigen::MatrixXd(2, 2);  // Measurement Noise
+    Rc = Eigen::MatrixXd(1, 1); // Compass Measurement Noise
+    Rs = Eigen::MatrixXd(1, 1); // Compass Measurement Satellite
+    JF = Eigen::MatrixXd(3, 3); // Jacobian of F
+    JH = Eigen::MatrixXd(2, 3); // Jacobian of H
+    JV = Eigen::MatrixXd(3, 2); // Jacobian of V
 
-    JHD = Eigen::MatrixXd(1, 3); //  Jacobina of H/d
+    JHD = Eigen::MatrixXd(1, 3); //  Jacobian of H/d
 
-    P = Eigen::MatrixXd(3, 3); // Co-Varianze
+    P = Eigen::MatrixXd(3, 3); // Co-Variance
 
     // CO-VARIANCES
 
@@ -296,7 +296,7 @@ Robot::Robot(double _dt)
     const double sigma_steer = .1;
     M << sigma_vel * sigma_vel, 0., 0., sigma_steer * sigma_steer;
 
-    // Noise in Mesurement Space
+    // Noise in Measurement Space
     /// PLAY WITH THESE TO SEE HOW WELL IT WORKS !!!
     const double sigma_range = .1; // .1, 1, 3.;
     const double sigma_bear = .1;  // .2, 1., 2.,
@@ -305,7 +305,7 @@ Robot::Robot(double _dt)
     const double sigma_compass = 0.02; // 0.02 .2, 1., 2.,
     Rc << sigma_compass * sigma_compass;
 
-    // Sateite
+    // Satellite
     Rs << sigma_range * sigma_range;
 
     // NOISE
@@ -334,7 +334,7 @@ Robot::Robot(double _dt)
     // X<<px,py-.1,theta-.2;
     X << px, py, theta;
     // INITIAL
-    P << .1, 0, 0, 0, .1, 0, 0, 0, .1; // Co-Varianze
+    P << .1, 0, 0, 0, .1, 0, 0, 0, .1; // Co-Variance
 
     JacobiF(JF, X);
     JacobiV(JV, X);
@@ -406,7 +406,7 @@ void Robot::LocalizeC(void)
 #ifdef NOISE
     error(0) += .01 * c_noise(generator);
 #endif
-    std::cout << "COMPAS ERROR " << error << std::endl;
+    std::cout << "COMPASS ERROR " << error << std::endl;
 
     C << 0, 0, 1;
 
@@ -417,7 +417,7 @@ void Robot::LocalizeC(void)
 }
 
 // HERE IS YOURS
-// LOCALIZE ON SATELITES, DISTANCE ONLY
+// LOCALIZE ON SATELLITES, DISTANCE ONLY
 void Robot::LocalizeS(void)
 {
     int i;
@@ -435,7 +435,7 @@ void Robot::LocalizeS(void)
     }
 }
 
-// THIS IS THE FULL MARKER LCOALIZE, Distance and  Angle
+// THIS IS THE FULL MARKER LOCALIZE, Distance and  Angle
 void Robot::LocalizeM(void)
 {
     int i;
@@ -456,8 +456,8 @@ void Robot::LocalizeM(void)
     // For all  markers
     for (i = 0; i < num_makers; i++)
     {
-        // Compute ture  Observation with  Error
-        double dx = markers[i].px - px; // Locators use real lcoation for mesurements
+        // Compute true Observation with Error
+        double dx = markers[i].px - px; // Locators use real location for measurements
         double dy = markers[i].py - py;
         dist = sqrt(dx * dx + dy * dy);
         angl = normal_angle(atan2(dy, dx) - theta);
@@ -468,7 +468,7 @@ void Robot::LocalizeM(void)
 #endif
         error << dist, angl;
 
-        // Also Compute kalman robot  estimate, that is h(x)
+        // Also Compute Kalman robot estimate, that is h(x)
         dx = markers[i].px - X(0);
         dy = markers[i].py - X(1);
         angl = normal_angle(atan2(dy, dx) - X(2));
@@ -499,7 +499,7 @@ void Robot::LocalizeM(void)
 void init_setup(void)
 {
 
-    // FIXED MARKERS WE CAN GET DISTANCE AND AGNLE
+    // FIXED MARKERS WE CAN GET DISTANCE AND ANGLE
     num_makers = 0;
     //	add_marker(5.,10.);
     //	add_marker(15.,15.);
@@ -509,13 +509,13 @@ void init_setup(void)
     // add_marker(20.,12.);
     print_makers();
 
-    // SATELITES, WE CAN ONLY GET DISTANCE
-    // add_satelite(0,10,0); // Moving away
+    // SATELLITES, WE CAN ONLY GET DISTANCE
+    // add_satellite(0,10,0); // Moving away
 
-    //	add_satelite(20,5,-M_PI); // Moveing towards up
-    add_satelite(5, -10, M_PI * .5); // Moveing acrossy
+    //	add_satellite(20,5,-M_PI); // Moving towards up
+    add_satellite(5, -10, M_PI * .5); // Moving across y
 
-    // add_satelite(3,10,M_PI*-.5); // Moveing acrossy
+    // add_satellite(3,10,M_PI*-.5); // Moving across y
 }
 
 //-------------------------------------------------------
@@ -527,7 +527,7 @@ int main(void)
 
     init_setup();
 
-    FILE *sat_file = fopen("SAT", "w"); // satelite info
+    FILE *sat_file = fopen("SAT", "w"); // satellite info
 
     int i;
     double dt = DT;
