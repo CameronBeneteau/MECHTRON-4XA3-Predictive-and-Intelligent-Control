@@ -172,7 +172,7 @@ public:
     void JacobiV(Eigen::MatrixXd &V, const Eigen::VectorXd &X);
     void JacobiH(Eigen::MatrixXd &H, const Eigen::VectorXd &X, double px, double py);
 
-    // HERE
+    // HERE (TODO)
     // THE NEW JACOBIAN YOU HAVE TO IMPLEMENT,D Distance
     void JacobiHD(Eigen::MatrixXd &H, const Eigen::VectorXd &X, double px, double py);
 
@@ -193,7 +193,7 @@ private:
 
     Eigen::MatrixXd R;  // Measurement  Noise Marker (dist,angle)
     Eigen::MatrixXd Rc; // Measurement  Noise Compass
-    Eigen::MatrixXd Rs; // Measurement  Noise  Satellite HERE
+    Eigen::MatrixXd Rs; // Measurement  Noise  Satellite HERE (TODO)
     Eigen::MatrixXd M;  // Control Noise
 
     Eigen::MatrixXd JF; // Jacobian of F
@@ -211,7 +211,7 @@ private:
     std::mt19937 generator;
     // std::default_random_engine generator;
 
-    // mesurement
+    // measurement
     std::normal_distribution<double> d_noise; // ranger
     std::normal_distribution<double> b_noise; // angle
 
@@ -248,7 +248,7 @@ void Robot::JacobiV(Eigen::MatrixXd &V, const Eigen::VectorXd &X)
 
 /*
     output h
-        dx=sqrt( ex^2+ey*2)
+        dx=sqrt( ex^2+ey^2)
         angle= atan2(ey/ex) -theta;
 
         // SIGN of H2,1 is positive ..
@@ -264,9 +264,12 @@ void Robot::JacobiH(Eigen::MatrixXd &H, const Eigen::VectorXd &X, double px, dou
         (py - X(1)) / var, -(px - X(0)) / var, -1;
 }
 
-// HERE  THIS IS YOURS
+// HERE (TODO)
 void Robot::JacobiHD(Eigen::MatrixXd &H, const Eigen::VectorXd &X, double px, double py)
 {
+    const double dist = sqrt((px - X(0)) * (px - X(0)) + (py - X(1)) * (py - X(1)));
+
+    H << -(px - X(0)) / dist, -(py - X(1)) / dist, 0;
 }
 
 Robot::Robot(double _dt)
@@ -416,13 +419,25 @@ void Robot::LocalizeC(void)
     P = (I - K * C) * P;
 }
 
-// HERE IS YOURS
-// LOCALIZE ON SATELLITES, DISTANCE ONLY
+// THIS IS THE FULL MARKER LOCALIZE, Distance and  Angle
 void Robot::LocalizeS(void)
 {
     int i;
-    // DEFINE ALL THE MATRIX STUFF OUT NEED, its distance only
+    double dist;
+    double angl;
+    Eigen::MatrixXd S;
+    Eigen::MatrixXd K;
+    Eigen::MatrixXd I;
 
+    Eigen::MatrixXd error;
+
+    S = Eigen::MatrixXd(3, 3);
+    K = Eigen::MatrixXd(3, 1);
+    I = Eigen::MatrixXd(3, 3);
+    I.setIdentity();
+    error = Eigen::MatrixXd(1, 1);
+
+    // For all  markers
     for (i = 0; i < num_satellites; i++)
     {
 
@@ -431,7 +446,29 @@ void Robot::LocalizeS(void)
         // ADD NOISE !!!
         o_dist += d_noise(generator);
 
-        //.........
+        error << o_dist;
+
+        // // Also Compute Kalman robot estimate, that is h(x)
+        double dx = satellites[i]->getX() - X(0);
+        double dy = satellites[i]->getY() - X(1);
+        angl = normal_angle(atan2(dy, dx) - X(2));
+        Y << sqrt(dx * dx + dy * dy), angl;
+
+        error << error(0) - Y(0);
+
+        std::cout << "ERROR " << error.format(fmt) << " ANGLE " << angl << std::endl;
+
+        JacobiHD(JHD, X, satellites[i]->getX(), satellites[i]->getY());
+        S = JHD * P * JHD.transpose() + Rs;
+        K = P * JHD.transpose() * S.inverse();
+
+        X = X + K * error;
+
+        P = (I - K * JHD) * P;
+
+        // std::cout << "K=" << K.format(fmt) << std::endl;
+
+        printf("Satellite %d Dist %f  Angle %f \n", i, o_dist, angl * 180. / M_PI);
     }
 }
 
@@ -478,7 +515,7 @@ void Robot::LocalizeM(void)
         // WE NEED TO NORMALIZE THE ANGLE
         error(1) = normal_angle(error(1));
 
-        std::cout << "ERROR " << error.format(fmt) << " ANGLE:: " << angl << std::endl;
+        std::cout << "ERROR " << error.format(fmt) << " ANGLE " << angl << std::endl;
 
         JacobiH(JH, X, markers[i].px, markers[i].py);
         S = JH * P * JH.transpose() + R;
@@ -501,21 +538,21 @@ void init_setup(void)
 
     // FIXED MARKERS WE CAN GET DISTANCE AND ANGLE
     num_makers = 0;
-    //	add_marker(5.,10.);
-    //	add_marker(15.,15.);
-    // add_marker(10.,5.);
-    // add_marker(20.,5.);
+    // add_marker(5., 10.);
+    // add_marker(15., 15.);
+    // add_marker(10., 5.);
+    // add_marker(20., 5.);
 
-    // add_marker(20.,12.);
+    // add_marker(20., 12.);
     print_makers();
 
     // SATELLITES, WE CAN ONLY GET DISTANCE
-    // add_satellite(0,10,0); // Moving away
+    // add_satellite(0, 10, 0); // Moving away
 
-    //	add_satellite(20,5,-M_PI); // Moving towards up
+    // add_satellite(20, 5, -M_PI);      // Moving towards up
     add_satellite(5, -10, M_PI * .5); // Moving across y
 
-    // add_satellite(3,10,M_PI*-.5); // Moving across y
+    // add_satellite(3, 10, M_PI * -.5); // Moving across y
 }
 
 //-------------------------------------------------------
