@@ -419,56 +419,29 @@ void Robot::LocalizeC(void)
     P = (I - K * C) * P;
 }
 
-// THIS IS THE FULL MARKER LOCALIZE, Distance and  Angle
+// HERE (TODO)
+// LOCALIZE ON SATELLITES, DISTANCE ONLY
 void Robot::LocalizeS(void)
 {
     int i;
-    double dist;
-    double angl;
-    Eigen::MatrixXd S;
-    Eigen::MatrixXd K;
-    Eigen::MatrixXd I;
-
-    Eigen::MatrixXd error;
-
-    S = Eigen::MatrixXd(3, 3);
-    K = Eigen::MatrixXd(3, 1);
-    I = Eigen::MatrixXd(3, 3);
+    Eigen::MatrixXd K(3, 1);
+    Eigen::MatrixXd I(3, 3);
     I.setIdentity();
-    error = Eigen::MatrixXd(1, 1);
+    Eigen::MatrixXd S(1, 1);
+    Eigen::MatrixXd error(1, 1);
 
-    // For all  markers
     for (i = 0; i < num_satellites; i++)
     {
-
-        // Observed distance
-        double o_dist = satellites[i]->getDistance(X(0), X(1));
-        // ADD NOISE !!!
+        double o_dist = satellites[i]->getDistance(px, py);
         o_dist += d_noise(generator);
 
-        error << o_dist;
-
-        // // Also Compute Kalman robot estimate, that is h(x)
-        double dx = satellites[i]->getX() - X(0);
-        double dy = satellites[i]->getY() - X(1);
-        angl = normal_angle(atan2(dy, dx) - X(2));
-        Y << sqrt(dx * dx + dy * dy), angl;
-
-        error << error(0) - Y(0);
-
-        std::cout << "ERROR " << error.format(fmt) << " ANGLE " << angl << std::endl;
+        error << o_dist - satellites[i]->getDistance(X(0), X(1));
 
         JacobiHD(JHD, X, satellites[i]->getX(), satellites[i]->getY());
         S = JHD * P * JHD.transpose() + Rs;
         K = P * JHD.transpose() * S.inverse();
-
         X = X + K * error;
-
         P = (I - K * JHD) * P;
-
-        // std::cout << "K=" << K.format(fmt) << std::endl;
-
-        printf("Satellite %d Dist %f  Angle %f \n", i, o_dist, angl * 180. / M_PI);
     }
 }
 
