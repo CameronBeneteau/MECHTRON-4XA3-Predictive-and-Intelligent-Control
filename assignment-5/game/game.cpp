@@ -1,11 +1,11 @@
-/* Some Fun   */
-/* Martin v. M. very old code ...  */
-
+#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-int score; /* Globals */
+// Globals
+int score;
+int action[21];
 char in[20];
 
 int user(void)
@@ -20,17 +20,39 @@ int user(void)
     return (i);
 }
 
+void dynamic_programming(void)
+{
+    double gamma = 0.9;
+
+    double value[21];
+    value[20] = -10;
+    value[19] = 10;
+    value[18] = 10;
+
+    action[20] = 0;
+    action[19] = 1;
+    action[18] = 2;
+
+    for (int i = 17; i >= 0; i--)
+    {
+        double add_one = fmin(value[i + 2], value[i + 3]);
+        double add_two = fmin(value[i + 3], value[i + 4]);
+
+        value[i] = gamma * fmax(add_one, add_two);
+        action[i] = add_one > add_two ? 1 : 2;
+    }
+
+    printf("%-5s | %-10s | %s\n", "Score", "Value", "Action");
+    for (int i = 0; i <= 20; i++)
+    {
+        printf("%-5d | %-10f | %d\n", i, value[i], action[i]);
+    }
+}
+
 int computer(void)
 {
-    int i;
-    if (score % 3 == 1)
-        i = 1;
-    else if (score % 3 == 0)
-        i = 2;
-    else
-        i = rand() % 2 + 1;
-    printf("We are at %-2d Computer adds %d \n", score, i);
-    return (i);
+    printf("We are at %-2d Computer adds %d \n", score, action[score]);
+    return action[score];
 }
 
 int computer2(void)
@@ -45,6 +67,9 @@ int computer2(void)
 
 int main(void)
 {
+
+    dynamic_programming();
+
     srand(time(NULL));
     int i;
     printf(" Who says first 20 \n \n");
